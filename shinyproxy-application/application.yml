@@ -1,10 +1,20 @@
 proxy:
+  webservice:
+    authentication-url: https://your-auth-server.com/login
+    authentication-request-body: '{"username": "%s", "password": "%s"}'
   port: 8080
   authentication: simple
+  social:
+    app-id: yourgoogleappid
+    app-secret: yourgoogleappsecret
   admin-groups: admins
+  default-max-instances: 10
+  heartbeat-rate: 100000
+  heartbeat-timeout: 600000
+  container-wait-time: 200000
   users:
-  - name: Tom
-    password: Tom@123
+  - name: admin
+    password: password
     groups: admins
   - name: Jon
     password: Jon@123
@@ -19,13 +29,33 @@ proxy:
     url: http://localhost:8001
     namespace: shiny
     image-pull-policy: IfNotPresent
-    image-pull-secret: ${SecretForDockerRegistry} 
   specs:
   - id: Telephone_Application
     display-name: Telephones by region
     description: Application which shows telephone by region
     container-cmd: ["R", "-e", "shiny::runApp('/app/Shiny')"]
-    container-image: ${registry_name}.azurecr.io/Rshiny-application:latest
+    container-image: rshiny-application:latest
+  - id: RStudio
+    display-name: RStudio
+    description: RStudio Demo
+    container-image: openanalytics/shinyproxy-rstudio-ide-demo:1.4.1106__4.0.4
+    container-protocol: http
+    container-env:
+      DISABLE_AUTH: true
+      WWW_ROOT_PATH: "#{proxy.getRuntimeValue('SHINYPROXY_PUBLIC_PATH')}"
+    container-volumes: [ "/Users/onuryukselen:/home"]
+    port: 8787
+  - id: jupyter-notebook
+    display-name: Jupyter Notebook
+    description: Jupyter Notebook is a web-based interactive computational environment for creating Jupyter notebook documents.
+    container-cmd: ["start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.base_url=#{proxy.getRuntimeValue('SHINYPROXY_PUBLIC_PATH')}"]
+    container-image: openanalytics/shinyproxy-juypter-datascience
+    #container-volumes: [ "/tmp/jupyter/#{proxy.userId}/work:/home/jovyan/work"]
+    container-volumes: [ "/Users/onuryukselen/jupyter:/home/jovyan/work"]
+    port: 8888
+    websocket-reconnection-mode: None
+    target-path: "#{proxy.getRuntimeValue('SHINYPROXY_PUBLIC_PATH')}"
+
 
 logging:
   file:

@@ -15,14 +15,18 @@ spec:
     spec:
       containers:
       - name: shinyproxy
-        image: ${registry_name}.azurecr.io/shinyproxy-application:latest
+        image: shinyproxy-application:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
       - name: kube-proxy-sidecar
-        image: ${registry_name}.azurecr.io/kube-proxy-sidecar:0.1.0
+        image: kube-proxy-sidecar:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8001
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "sleep 5"] # wait 5 seconds to let shinyproxy remove the pods on graceful shutdown
       imagePullSecrets:
       - name: ${SecretForDockerRegistry}
